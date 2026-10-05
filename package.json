@@ -1,0 +1,43 @@
+{
+  "name": "plan-electricite",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "build:viewer": "node scripts/build-viewer.mjs",
+    "prebuild:artisan": "npm run build:viewer",
+    "build:artisan": "tsx scripts/build-artisan.ts",
+    "predev": "npm run build:viewer",
+    "dev": "astro dev --host 127.0.0.1",
+    "prebuild": "npm run build:viewer",
+    "build": "astro check && astro build",
+    "start": "node dist/server/entry.mjs",
+    "test": "tsx --test tests/*.test.ts",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@astrojs/node": "^9.0.0",
+    "@astrojs/react": "^4.0.0",
+    "@notionhq/client": "^5.0.0",
+    "astro": "^5.0.0",
+    "csv-parse": "^6.0.0",
+    "d3-selection": "^3.0.0",
+    "d3-zoom": "^3.0.0",
+    "fflate": "^0.8.2",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.0",
+    "@astrojs/check": "^0.9.0",
+    "@types/d3-selection": "^3.0.0",
+    "@types/d3-zoom": "^3.0.0",
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "esbuild": "^0.25.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  }
+}
