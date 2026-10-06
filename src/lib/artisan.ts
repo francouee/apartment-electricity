@@ -1,9 +1,10 @@
 import { z } from "zod";
-import { datasetSchema, type Dataset, type Position } from "./model";
+import { datasetSchema, embeddedImageSchema, type Dataset, type Position } from "./model";
 
 export const artisanSnapshotSchema = z.object({
   dataset: datasetSchema,
   exportedAt: z.string().datetime(),
+  productImageAssets: z.record(embeddedImageSchema).optional(),
 });
 export type ArtisanSnapshot = z.infer<typeof artisanSnapshotSchema>;
 
@@ -27,6 +28,13 @@ export function createArtisanSnapshot(dataset: Dataset, positions: Record<string
 
 export function createArtisanHtml(snapshot: ArtisanSnapshot, imageData: string, script: string, css: string): string {
   artisanSnapshotSchema.parse(snapshot);
+  for (const point of snapshot.dataset.points) {
+    for (const image of point.productImages ?? []) {
+      if (!image.src.startsWith("data:") && !snapshot.productImageAssets?.[image.src]) {
+        throw new Error("Les visuels constructeur doivent être intégrés avant l'export hors ligne.");
+      }
+    }
+  }
   if (!/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(imageData)) throw new Error("Le fond du plan doit être une image JPEG intégrée.");
   const json = JSON.stringify({ ...snapshot, imageData })
     .replace(/</g, "\\u003c").replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
@@ -48,4 +56,25 @@ export function createArtisanHtml(snapshot: ArtisanSnapshot, imageData: string, 
 <script>${safeScript}</script>
 </body>
 </html>`;
+}
+
+export async function embedProductImages(snapshot: ArtisanSnapshot, loadImage: (src: string) => Promise<string>): Promise<ArtisanSnapshot> {
+  const assets = { ...snapshot.productImageAssets };
+  const sources = new Set(snapshot.dataset.points.flatMap((point) =>
+    (point.productImages ?? []).map((image) => image.src).filter((src) => !src.startsWith("data:") && !assets[src]),
+  ));
+  for (const src of sources) assets[src] = embeddedImageSchema.parse(await loadImage(src));
+  return artisanSnapshotSchema.parse({ ...snapshot, productImageAssets: assets });
+}
+
+export function resolveArtisanDataset(snapshot: ArtisanSnapshot): Dataset {
+  return {
+    ...snapshot.dataset,
+    points: snapshot.dataset.points.map((point) => ({
+      ...point,
+      productImages: point.productImages?.map((image) => ({
+        ...image, src: snapshot.productImageAssets?.[image.src] ?? image.src,
+      })),
+    })),
+  };
 }

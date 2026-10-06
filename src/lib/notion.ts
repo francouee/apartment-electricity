@@ -70,6 +70,42 @@ export async function readNotion(token: string, databaseId: string, explicitSour
     sourceId = database.data_sources[0].id;
   }
   const zoneNames = new Map<string, Promise<string>>();
+  const catalogueImages = new Map<string, Promise<{ name: string; src: string } | null>>();
+  const catalogueImage = (id: string) => {
+    let pending = catalogueImages.get(id);
+    if (!pending) {
+      pending = client.pages.retrieve({ page_id: id }).then((page) => {
+        if (!isFullPage(page)) throw new NotionSchemaError("Partagez le catalogue constructeur avec l'intégration Notion pour lire ses images.");
+        const image = page.properties.image;
+        if (!image) return null;
+        if (image.type !== "url") throw new NotionSchemaError("La colonne image du catalogue constructeur doit être de type URL.");
+        if (!image.url) return null;
+        if (!image.url.startsWith("https://")) throw new NotionSchemaError("Les images du catalogue constructeur doivent utiliser une URL HTTPS.");
+        const title = Object.values(page.properties).find((value) => value.type === "title");
+        if (!title) throw new NotionSchemaError("Un produit constructeur ne possède pas de titre.");
+        return { name: text(title), src: image.url };
+      });
+      catalogueImages.set(id, pending);
+    }
+    return pending;
+  };
+  const relationIds = async (page: PageObjectResponse, value: Property): Promise<string[]> => {
+    if (value.type !== "relation") throw new NotionSchemaError("Les zones et le catalogue constructeur doivent être des relations.");
+    if (value.relation.length < 25 && !("has_more" in value && value.has_more === true)) return value.relation.map((item) => item.id);
+    const ids: string[] = [];
+    let cursor: string | undefined;
+    do {
+      const items = await client.pages.properties.retrieve({ page_id: page.id, property_id: value.id, start_cursor: cursor });
+      if (items.object !== "list") throw new NotionSchemaError("Une relation Notion n'est pas une liste.");
+      for (const item of items.results) {
+        if (item.type !== "relation") throw new NotionSchemaError("Une relation Notion est incohérente.");
+        ids.push(item.relation.id);
+      }
+      if (items.has_more && !items.next_cursor) throw new NotionSchemaError("Pagination d'une relation Notion incomplète.");
+      cursor = items.has_more ? items.next_cursor ?? undefined : undefined;
+    } while (cursor);
+    return ids;
+  };
   const zoneTitle = (id: string): Promise<string> => {
     let pending = zoneNames.get(id);
     if (!pending) {
@@ -94,29 +130,14 @@ export async function readNotion(token: string, databaseId: string, explicitSour
       const zones = property(page, "🗺️ Zones");
       let zone: string;
       if (zones.type === "relation") {
-        let relationIds = zones.relation.map((value) => value.id);
-        if (relationIds.length >= 25) {
-          relationIds = [];
-          let relationCursor: string | undefined;
-          do {
-            const properties = await client.pages.properties.retrieve({
-              page_id: page.id, property_id: zones.id, start_cursor: relationCursor,
-            });
-            if (properties.object !== "list") throw new Error("La relation Zones n'est pas une liste.");
-            for (const item of properties.results) {
-              if (item.type !== "relation") throw new Error("Propriété Zones incohérente.");
-              relationIds.push(item.relation.id);
-            }
-            if (properties.has_more && !properties.next_cursor) throw new Error("Pagination des zones incomplète.");
-            relationCursor = properties.has_more ? properties.next_cursor ?? undefined : undefined;
-          } while (relationCursor);
-        }
-        zone = (await Promise.all(relationIds.map(zoneTitle))).join(", ");
+        zone = (await Promise.all((await relationIds(page, zones)).map(zoneTitle))).join(", ");
       } else {
         zone = text(zones);
       }
       const existing = property(page, "Déjà présente ?");
       if (existing.type !== "checkbox") throw new Error("La colonne Déjà présente ? doit être une case à cocher.");
+      const catalogue = page.properties["prises BOM"];
+      const images = catalogue ? await Promise.all((await relationIds(page, catalogue)).map(catalogueImage)) : [];
       points.push(pointSchema.parse({
         id: page.id,
         name: text(property(page, "Nom")).trim(),
@@ -128,6 +149,7 @@ export async function readNotion(token: string, databaseId: string, explicitSour
         position: coordinatePair(number(page, "X"), number(page, "Y")),
         notes: text(property(page, "Notes")),
         url: page.url,
+        productImages: images.filter((image) => image !== null),
       }));
     }
     if (response.has_more && !response.next_cursor) throw new Error("Pagination Notion incomplète.");

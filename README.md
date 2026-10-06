@@ -50,6 +50,29 @@ une pièce sans aucun prix affiche **Non renseigné**, pas un zéro supposé.
 Les lignes sans zone sont regroupées dans **Sans pièce**. Une ligne avec plusieurs
 zones reste dans un groupe combiné pour éviter de compter son prix plusieurs fois.
 
+Sous les sous-totaux, chaque pièce possède un détail repliable avec une ligne par prise
+ou interrupteur : visuel constructeur, nom, type, installation et prix. Cliquer sur
+le nom ouvre sa fiche sur le plan. Les détails restent complets même si la liste
+principale est filtrée.
+
+## Visuels constructeur
+
+Ajouter une colonne **image**, de type **URL**, dans le catalogue lié par **prises BOM**.
+La fiche d'une prise et son détail dans le tableau des prix affichent le ou les visuels
+des produits liés, avec leur nom constructeur. Une URL vide affiche **Visuel non
+renseigné** ; un téléchargement impossible affiche **Image indisponible**.
+Donner à l'intégration Notion accès au catalogue, en plus des prises et des zones.
+
+Les images sont intégrées dans les exports artisan et la construction GitHub Pages,
+sans requête externe chez le visiteur. Chaque URL distincte est téléchargée une seule
+fois et stockée une seule fois dans l'instantané. Pour l'export, les URL doivent être
+en HTTPS sur **assets.legrand.com**, sans redirection ni identifiants, et pointer vers
+une image JPEG, PNG, WebP ou GIF de moins de 8 Mo. Un échec bloque l'export ou le
+déploiement avec une erreur explicite, plutôt que publier un fichier incomplet.
+Les URL d'autres fabricants nécessitent d'ajouter leur origine autorisée dans
+`src/lib/catalogue-image.ts`. Les visuels restent des images du catalogue, pas des
+photos des prises effectivement installées.
+
 ## Modes admin et artisan / GitHub Pages
 
 Le serveur Astro conserve le **mode admin** : lecture de Notion, placement, export CSV

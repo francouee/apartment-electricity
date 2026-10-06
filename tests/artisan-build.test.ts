@@ -53,3 +53,20 @@ test("CI refuses to publish a token accidentally included in a note", async () =
     { ...point, notes: config.token },
   ]), /contient le token/);
 });
+
+test("CI integrates product photos through the same offline image pipeline as manual exports", async () => {
+  let loads = 0;
+  const src = "https://assets.legrand.com/product.jpg";
+  const html = await buildArtisanHtml(config, assets, async () => [
+    { ...point, productImages: [{ name: "Double prise", src }] },
+    { ...point, id: "another-point", productImages: [{ name: "Double prise", src }] },
+  ], async (url) => {
+    loads++;
+    assert.equal(url, src);
+    return "data:image/png;base64,YQ==";
+  });
+  assert.equal(loads, 1);
+  const json = html.match(/id="artisan-data">([^]*?)<\/script>/)?.[1];
+  assert.ok(json);
+  assert.equal(JSON.parse(json).productImageAssets[src], "data:image/png;base64,YQ==");
+});

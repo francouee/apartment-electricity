@@ -68,21 +68,27 @@ test("placement by click remains accurate after zoom; mobile has no page overflo
   await svg.evaluate((element) => {
     element.addEventListener("click", (event) => {
       const mouse = event as MouseEvent;
-      element.setAttribute("data-click-x", String(mouse.clientX));
-      element.setAttribute("data-click-y", String(mouse.clientY));
+      const matrix = element.querySelector("g")?.getScreenCTM();
+      if (!matrix) throw new Error("Missing plan transform");
+      const pointer = (element as SVGSVGElement).createSVGPoint();
+      pointer.x = mouse.clientX;
+      pointer.y = mouse.clientY;
+      // Saving changes the notice and may scroll the page; compare in plan space.
+      const position = pointer.matrixTransform(matrix.inverse());
+      element.setAttribute("data-click-x", String(position.x));
+      element.setAttribute("data-click-y", String(position.y));
     }, { once: true });
   });
   await svg.click({ position: { x: 140, y: 160 } });
   await expect(page.locator("[data-marker]")).toHaveCount(1);
   const alignment = await page.locator("[data-marker]").evaluate((element) => {
     const marker = element as SVGGElement;
-    const matrix = marker.getScreenCTM();
-    const svgRect = marker.ownerSVGElement?.getBoundingClientRect();
-    if (!matrix || !svgRect) throw new Error("Missing SVG transform");
+    const matrix = marker.transform.baseVal.consolidate()?.matrix;
+    if (!matrix) throw new Error("Missing SVG transform");
     return {
-      x: matrix.e - svgRect.left, y: matrix.f - svgRect.top,
-      expectedX: Number(marker.ownerSVGElement?.getAttribute("data-click-x")) - svgRect.left,
-      expectedY: Number(marker.ownerSVGElement?.getAttribute("data-click-y")) - svgRect.top,
+      x: matrix.e, y: matrix.f,
+      expectedX: Number(marker.ownerSVGElement?.getAttribute("data-click-x")),
+      expectedY: Number(marker.ownerSVGElement?.getAttribute("data-click-y")),
     };
   });
   expect(alignment.x).toBeCloseTo(alignment.expectedX, 4);

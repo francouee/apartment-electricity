@@ -1,4 +1,5 @@
-import { createArtisanHtml, createArtisanSnapshot } from "./artisan";
+import { createArtisanHtml, createArtisanSnapshot, embedProductImages } from "./artisan";
+import { loadCatalogueImage } from "./catalogue-image";
 import { readNotion } from "./notion";
 
 export interface ArtisanBuildConfig {
@@ -19,14 +20,17 @@ export async function buildArtisanHtml(
   config: ArtisanBuildConfig,
   assets: { imageData: string; script: string; css: string },
   readPoints: typeof readNotion = readNotion,
+  loadImage = loadCatalogueImage,
 ): Promise<string> {
   const points = await readPoints(config.token, config.databaseId, config.sourceId);
-  const snapshot = createArtisanSnapshot({
+  const original = createArtisanSnapshot({
     source: "notion",
     updatedAt: new Date().toISOString(),
     canSavePositions: false,
     points,
   }, {});
+  if (JSON.stringify(original).includes(config.token)) throw new Error("Publication interrompue : le contenu contient le token Notion.");
+  const snapshot = await embedProductImages(original, loadImage);
   const html = createArtisanHtml(snapshot, assets.imageData, assets.script, assets.css);
   if (html.includes(config.token)) throw new Error("Publication interrompue : le contenu contient le token Notion.");
   return html;

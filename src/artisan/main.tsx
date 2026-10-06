@@ -1,6 +1,6 @@
 import { createRoot } from "react-dom/client";
 import ElectricalPlan from "../components/ElectricalPlan";
-import { artisanSnapshotSchema } from "../lib/artisan";
+import { artisanSnapshotSchema, resolveArtisanDataset } from "../lib/artisan";
 
 const root = document.getElementById("artisan-root");
 const data = document.getElementById("artisan-data");
@@ -13,7 +13,7 @@ try {
   }
   createRoot(root).render(<ElectricalPlan
     readOnly
-    initialDataset={snapshot.dataset}
+    initialDataset={resolveArtisanDataset(snapshot)}
     snapshotDate={snapshot.exportedAt}
     planImage={input.imageData}
   />);

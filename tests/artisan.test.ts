@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { parsePoints } from "../src/lib/csv";
-import { createArtisanHtml, createArtisanSnapshot } from "../src/lib/artisan";
+import { createArtisanHtml, createArtisanSnapshot, embedProductImages, resolveArtisanDataset } from "../src/lib/artisan";
 import type { Dataset } from "../src/lib/model";
 
 const dataset: Dataset = {
@@ -20,6 +20,29 @@ test("artisan snapshot includes all local placements and strips Notion links, ID
   assert.ok(snapshot.dataset.points.every((point) => point.id.startsWith("artisan:") && point.url === null && !point.zoneExport.includes("https://")));
   assert.ok(!JSON.stringify(snapshot).includes("must-not-export"));
   assert.equal(copy.points[0].position, null);
+});
+
+test("snapshot embeds each distinct product image once and resolves it without external requests", async () => {
+  const src = "https://assets.legrand.com/product.jpg";
+  const original = createArtisanSnapshot({
+    ...dataset, points: dataset.points.slice(0, 2).map((point) => ({
+      ...point, productImages: [{ name: "Produit", src }],
+    })),
+  }, {});
+  assert.throws(() => createArtisanHtml(original, "data:image/jpeg;base64,YQ==", "", ""), /intégrés/);
+  let calls = 0;
+  const snapshot = await embedProductImages(original, async (url) => {
+    calls++;
+    assert.equal(url, src);
+    return "data:image/jpeg;base64,YQ==";
+  });
+  assert.equal(calls, 1);
+  assert.deepEqual(snapshot.productImageAssets, { [src]: "data:image/jpeg;base64,YQ==" });
+  assert.ok(resolveArtisanDataset(snapshot).points.every((point) => point.productImages?.[0].src === "data:image/jpeg;base64,YQ=="));
+  assert.equal(original.dataset.points[0].productImages?.[0].src, src);
+  assert.ok(createArtisanHtml(snapshot, "data:image/jpeg;base64,YQ==", "", ""));
+  await assert.rejects(embedProductImages(original, async () => { throw new Error("Image unavailable"); }), /Image unavailable/);
+  await assert.rejects(embedProductImages(original, async () => "https://remote.example/image.jpg"));
 });
 test("standalone HTML safely embeds user notes without allowing script-tag injection", () => {
   const copy = { ...dataset, points: dataset.points.map((point, index) => index === 0

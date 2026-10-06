@@ -6,6 +6,11 @@ export const positionSchema = z.object({
 });
 export type Position = z.infer<typeof positionSchema>;
 export const positionsSchema = z.record(positionSchema);
+export const embeddedImageSchema = z.string().regex(/^data:image\/(?:jpeg|png|webp|gif);base64,[A-Za-z0-9+/=]+$/);
+export const productImageSchema = z.object({
+  name: z.string().min(1),
+  src: z.union([z.string().url().refine((value) => value.startsWith("https://"), "Une image constructeur doit utiliser HTTPS."), embeddedImageSchema]),
+});
 export const pointSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
@@ -17,6 +22,7 @@ export const pointSchema = z.object({
   position: positionSchema.nullable(),
   notes: z.string(),
   url: z.string().url().nullable(),
+  productImages: z.array(productImageSchema).optional(),
 });
 export type Point = z.infer<typeof pointSchema>;
 export const datasetSchema = z.object({

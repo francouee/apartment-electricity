@@ -184,3 +184,65 @@ test("ambiguous or non-numeric price rollups give explicit errors instead of a m
     } finally { mocked.mock.restore(); }
   }
 });
+
+test("reads the catalogue image URL and title, caching products and preserving missing images", async () => {
+  const requests: string[] = [];
+  const mocked = mock.method(globalThis, "fetch", async (input: string | URL | Request) => {
+    const path = new URL(input instanceof Request ? input.url : String(input)).pathname;
+    if (path.endsWith("/data_sources/source/query")) {
+      return Response.json({
+        results: ["first", "second", "third"].map((id, index) => {
+          const original = page(id);
+          return { ...original, properties: {
+            ...original.properties,
+            "🗺️ Zones": { type: "select", select: { name: "Chambre" } },
+            "prises BOM": { id: "bom", type: "relation", relation: [{ id: index === 2 ? "no-image" : "product" }] },
+          } };
+        }), has_more: false, next_cursor: null,
+      });
+    }
+    const id = path.split("/").at(-1)!;
+    requests.push(id);
+    return Response.json({ ...page(id), properties: {
+      Nom: { type: "title", title: [{ plain_text: "Double prise Legrand" }] },
+      image: { type: "url", url: id === "no-image" ? null : "https://assets.legrand.com/product.jpg" },
+    } });
+  });
+  try {
+    const points = await readNotion("test-token", "database", "source");
+    assert.deepEqual(points[0].productImages, [{ name: "Double prise Legrand", src: "https://assets.legrand.com/product.jpg" }]);
+    assert.deepEqual(points[1].productImages, points[0].productImages);
+    assert.deepEqual(points[2].productImages, []);
+    assert.deepEqual(requests, ["product", "no-image"]);
+  } finally { mocked.mock.restore(); }
+});
+
+test("catalogue relations are paginated and every related product image is retained", async () => {
+  const cursors: (string | null)[] = [];
+  const mocked = mock.method(globalThis, "fetch", async (input: string | URL | Request) => {
+    const url = new URL(input instanceof Request ? input.url : String(input));
+    if (url.pathname.endsWith("/data_sources/source/query")) {
+      const original = page("first");
+      return Response.json({ results: [{ ...original, properties: {
+        ...original.properties, "🗺️ Zones": { type: "select", select: { name: "Chambre" } },
+        "prises BOM": { id: "bom", type: "relation", relation: [{ id: "product-1" }], has_more: true },
+      } }], has_more: false, next_cursor: null });
+    }
+    if (url.pathname.includes("/properties/bom")) {
+      const cursor = url.searchParams.get("start_cursor");
+      cursors.push(cursor);
+      return Response.json({ object: "list", results: [{ type: "relation", relation: { id: cursor ? "product-2" : "product-1" } }],
+        has_more: !cursor, next_cursor: cursor ? null : "next" });
+    }
+    const id = url.pathname.split("/").at(-1)!;
+    return Response.json({ ...page(id), properties: {
+      Nom: { type: "title", title: [{ plain_text: id }] },
+      image: { type: "url", url: `https://assets.legrand.com/${id}.jpg` },
+    } });
+  });
+  try {
+    const points = await readNotion("test-token", "database", "source");
+    assert.deepEqual(cursors, [null, "next"]);
+    assert.equal(points[0].productImages?.length, 2);
+  } finally { mocked.mock.restore(); }
+});

@@ -8,6 +8,7 @@ import {
 } from "../lib/model";
 import { clientToPlan, usePointDrag } from "../lib/use-point-drag";
 import CostSummary from "./CostSummary";
+import ProductVisual from "./ProductVisual";
 
 const STORAGE_KEY = "tonduti:positions:v1";
 const IMAGE_SIZE = 2000;
@@ -45,6 +46,8 @@ export default function ElectricalPlan({
   const zoomRef = useRef<ZoomBehavior<SVGSVGElement, unknown> | null>(null);
   const loadSequence = useRef(0);
   const rowRefs = useRef(new Map<string, HTMLTableRowElement>());
+  const detailRef = useRef<HTMLElement>(null);
+  const detailContentRef = useRef<HTMLDivElement>(null);
   const drag = usePointDrag(svgRef, groupRef, {
     disabled: readOnly || saving || loading || confirmation !== null,
     onStart: (id) => {
@@ -202,6 +205,7 @@ export default function ElectricalPlan({
 
   function selectPoint(id: string, scroll: boolean) {
     setSelectedId(id);
+    if (detailContentRef.current) detailContentRef.current.scrollTop = 0;
     if (scroll) rowRefs.current.get(id)?.scrollIntoView({ block: "nearest", behavior: "auto" });
   }
 
@@ -347,9 +351,10 @@ export default function ElectricalPlan({
             <span className="legend-existing">Centre blanc : déjà présente</span>
           </div>
           <p className="plan-note">{readOnly ? "Survole pour consulter, clique pour sélectionner. Molette pour zoomer ; glisse le fond pour déplacer le plan." : "Glisse un point pour le déplacer. Survole pour consulter. Molette pour zoomer ; glisse le fond pour déplacer le plan. Échap annule un déplacement."}</p>
-          <section className="detail-panel" aria-labelledby="detail-heading">
-            {detail ? <>
+          <section ref={detailRef} className="detail-panel" aria-labelledby="detail-heading">
+            <div ref={detailContentRef} className="detail-content">{detail ? <>
               <div className="detail-title"><i style={{ background: pointColor(detail.type) }} /><h3 id="detail-heading">{detail.name}</h3></div>
+              <ProductVisual key={detail.id} images={detail.productImages} />
               <dl>
                 <div><dt>Zone</dt><dd>{detail.zone || "Non renseignée"}</dd></div>
                 <div><dt>Type</dt><dd>{detail.type}</dd></div>
@@ -358,7 +363,7 @@ export default function ElectricalPlan({
               </dl>
               {detail.notes && <p className="notes">{detail.notes}</p>}
               {!readOnly && detail.url && <a href={detail.url} target="_blank" rel="noreferrer">Voir la fiche Notion</a>}
-            </> : <><h3 id="detail-heading">Une prise, tous ses détails</h3><p>{readOnly ? "Sélectionne une entrée dans le tableau ou un point sur le plan pour consulter ses détails." : "Sélectionne une entrée dans le tableau pour la consulter ou la positionner."}</p></>}
+            </> : <><h3 id="detail-heading">Une prise, tous ses détails</h3><p>{readOnly ? "Sélectionne une entrée dans le tableau ou un point sur le plan pour consulter ses détails." : "Sélectionne une entrée dans le tableau pour la consulter ou la positionner."}</p></>}</div>
             {!readOnly && selected && <div className="position-editor">
               <button className="primary" disabled={saving} onClick={() => setPlacing(!placing)}>{placing ? "Annuler le placement" : "Placer sur le plan"}</button>
               <form key={`${selected.id}:${getPosition(selected)?.x}:${getPosition(selected)?.y}`}
@@ -428,7 +433,11 @@ export default function ElectricalPlan({
           <p className="list-footnote">Les positions ne sont pas déduites du nom. Elles sont définies par toi sur le plan.</p>
         </section>
       </div>
-      {dataset && <CostSummary points={points} />}
+      {dataset && <CostSummary points={points} selectedId={selectedId} onSelect={(id) => {
+        setHoveredId(null);
+        selectPoint(id, false);
+        detailRef.current?.scrollIntoView({ block: "nearest", behavior: "auto" });
+      }} />}
       <footer>Repérage du projet, pas un schéma électrique réglementaire. Implantations et conformité à valider avec un professionnel.</footer>
     </main>
   );

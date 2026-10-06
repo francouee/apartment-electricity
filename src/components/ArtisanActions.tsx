@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { strToU8, zipSync } from "fflate";
 import css from "../styles/global.css?raw";
-import { createArtisanHtml, createArtisanSnapshot, type ArtisanSnapshot } from "../lib/artisan";
+import { createArtisanHtml, createArtisanSnapshot, embedProductImages, type ArtisanSnapshot } from "../lib/artisan";
+import { apiErrorSchema, embeddedImageSchema } from "../lib/model";
 import type { Dataset, Position } from "../lib/model";
 
 type Props = {
@@ -43,7 +44,17 @@ export default function ArtisanActions({ dataset, positions, disabled, onPreview
         import("../../.generated/artisan-viewer.js?raw"),
         imageAsDataUrl(),
       ]);
-      const html = createArtisanHtml(snapshot, imageData, viewerScript, css);
+      const illustrated = await embedProductImages(snapshot, async (src) => {
+        const response = await fetch(`/api/product-image?url=${encodeURIComponent(src)}`);
+        const body: unknown = await response.json();
+        if (!response.ok) {
+          const failure = apiErrorSchema.safeParse(body);
+          throw new Error(failure.success ? failure.data.error : "Impossible d'intégrer le visuel constructeur.");
+        }
+        if (!body || typeof body !== "object" || !("dataUrl" in body)) throw new Error("Réponse du visuel constructeur invalide.");
+        return embeddedImageSchema.parse(body.dataUrl);
+      });
+      const html = createArtisanHtml(illustrated, imageData, viewerScript, css);
       const archive = zipSync({
         "index.html": strToU8(html),
         ".nojekyll": new Uint8Array(),
