@@ -76,7 +76,7 @@ photos des prises effectivement installées.
 ## Modes admin et artisan / GitHub Pages
 
 Le serveur Astro conserve le **mode admin** : lecture de Notion, placement, export CSV
-et sauvegarde explicite. **Vue artisan** ouvre un aperçu en lecture seule, avec retour
+et sauvegarde explicite. **Aperçu du site** ouvre un aperçu en lecture seule, avec retour
 au mode admin. Le mode artisan conserve le survol, la sélection, les détails, les
 filtres, le zoom et le déplacement du fond, mais aucun outil d'édition ou de sauvegarde.
 

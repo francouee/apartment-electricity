@@ -263,11 +263,11 @@ export default function ElectricalPlan({
       </dialog>}
 
       <section className="source-bar" aria-label="Source des données">
-        <span><span className="status-dot" />{readOnly ? "Vue artisan · lecture seule" : dataset?.source === "notion" ? `Notion connecté · ${dataset.canSavePositions ? "sauvegarde explicite" : "lecture seule"}` : dataset ? "Export Notion fourni · données locales" : "Chargement des prises…"}</span>
+        <span><span className="status-dot" />{readOnly ? "Plan d’implantation" : dataset?.source === "notion" ? `Notion connecté${dataset.canSavePositions ? " · sauvegarde explicite" : ""}` : dataset ? "Export Notion fourni · données locales" : "Chargement des prises…"}</span>
         <span>{positionedCount} / {points.length} emplacements définis</span>
         {!readOnly && <button onClick={() => void load()} disabled={loading || saving || drag.draggingId !== null}>{loading ? "Chargement…" : "Actualiser"}</button>}
       </section>
-      {readOnly && snapshotDate && <p className="source-note">Version figée du {new Date(snapshotDate).toLocaleString("fr-FR")}. Les modifications ultérieures de Notion ne sont pas synchronisées.</p>}
+      {readOnly && snapshotDate && <p className="source-note">Version du {new Date(snapshotDate).toLocaleString("fr-FR")}.</p>}
       {!readOnly && dataset?.source === "csv" && <p className="source-note">Cette version utilise ton export, pas une connexion en direct. Le token serveur activera la lecture Notion.</p>}
       {!readOnly && dataset?.source === "notion" && <p className="source-note">{pending.length} position(s) locale(s) différente(s) de Notion.
         {!dataset.canSavePositions && " L’écriture est désactivée hors du serveur local de développement."}

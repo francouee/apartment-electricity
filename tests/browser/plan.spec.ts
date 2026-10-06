@@ -322,8 +322,9 @@ test("artisan preview is read-only, keeps local placements and returns to admin 
   const { requests } = await mockNotionSaving(page);
   await page.goto("/");
   await placeLocally(page, "Prise chevet gauche");
-  await page.getByRole("button", { name: "Vue artisan", exact: true }).click();
-  await expect(page.getByText("Vue artisan · lecture seule", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Aperçu du site", exact: true }).click();
+  await expect(page.getByText("Plan d’implantation", { exact: true })).toBeVisible();
+  await expect(page.locator("main")).not.toContainText(/vue artisan|lecture seule/i);
   await expect(page.locator("[data-marker]")).toHaveCount(1);
   await expect(page.getByRole("button", { name: /Enregistrer dans Notion/ })).toHaveCount(0);
   await expect(page.locator(".drag-handle")).toHaveCount(0);
@@ -373,6 +374,8 @@ test("ZIP export runs offline and below a GitHub Pages project path without APIs
   viewer.on("pageerror", (error) => errors.push(error.message));
   viewer.on("request", (request) => requests.push(request.url()));
   await viewer.goto(pathToFileURL(file).href);
+  await expect(viewer).toHaveTitle("Plan électrique");
+  await expect(viewer.locator("main")).not.toContainText(/vue artisan|lecture seule/i);
   await expect(viewer.locator(".list-panel tbody tr")).toHaveCount(32);
   await expect(viewer.getByRole("heading", { name: "Prix par pièce" })).toBeVisible();
   await expect(viewer.locator("[data-marker]")).toHaveCount(1);
@@ -412,7 +415,7 @@ test("cost summary shows room subtotals, excludes missing prices and remains glo
   await page.getByRole("searchbox").fill("Machine");
   await expect(page.locator(".list-panel tbody tr")).toHaveCount(1);
   await expect(summary.locator(".cost-total strong")).toHaveText(/27,86\s*€/);
-  await page.getByRole("button", { name: "Vue artisan", exact: true }).click();
+  await page.getByRole("button", { name: "Aperçu du site", exact: true }).click();
   await expect(page.locator(".cost-total strong")).toHaveText(/27,86\s*€/);
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);

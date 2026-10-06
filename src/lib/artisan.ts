@@ -45,8 +45,8 @@ export function createArtisanHtml(snapshot: ArtisanSnapshot, imageData: string, 
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Plan électrique partagé avec l’artisan, en lecture seule.">
-<title>Plan électrique · Vue artisan</title>
+<meta name="description" content="Plan électrique de l’appartement : implantation, équipements et prix.">
+<title>Plan électrique</title>
 <style>${safeCss}</style>
 </head>
 <body>

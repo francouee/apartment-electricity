@@ -37,7 +37,7 @@ test("clicking a marker or room price line shows the product photo; room details
   await page.getByRole("button", { name: `Voir ${points[2].name}`, exact: true }).click();
   await expect(page.locator(".detail-panel")).toContainText("Visuel non renseigné");
   await expect(page.locator(".detail-panel img")).toHaveCount(0);
-  await page.getByRole("button", { name: "Vue artisan", exact: true }).click();
+  await page.getByRole("button", { name: "Aperçu du site", exact: true }).click();
   await page.getByRole("button", { name: `Voir ${points[0].name}`, exact: true }).click();
   await expect(page.locator(".detail-panel img")).toHaveAttribute("src", src);
   await expect(page.locator(".position-editor")).toHaveCount(0);

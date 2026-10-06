@@ -58,7 +58,7 @@ export default function ArtisanActions({ dataset, positions, disabled, onPreview
       const archive = zipSync({
         "index.html": strToU8(html),
         ".nojekyll": new Uint8Array(),
-        "LISEZ-MOI.txt": strToU8("Vue artisan en lecture seule.\nDécompressez cette archive et publiez index.html à la racine de votre dépôt GitHub Pages.\nDans Settings > Pages : Deploy from a branch, choisissez votre branche et / (root).\nLa page contient le plan, les noms, zones, notes, prix et positions au moment de l'export.\nAucun token, aucun serveur ni connexion Notion ne sont nécessaires.\nPour actualiser le partage, remplacez index.html avec un nouvel export.\n"),
+        "LISEZ-MOI.txt": strToU8("Plan électrique de l'appartement.\nDécompressez cette archive et publiez index.html à la racine de votre dépôt GitHub Pages.\nDans Settings > Pages : Deploy from a branch, choisissez votre branche et / (root).\nLa page contient le plan, les noms, zones, notes, prix et positions au moment de l'export.\nAucun token, aucun serveur ni connexion Notion ne sont nécessaires.\nPour actualiser le partage, remplacez index.html avec un nouvel export.\n"),
       });
       const url = URL.createObjectURL(new Blob([new Uint8Array(archive)], { type: "application/zip" }));
       const link = document.createElement("a");
@@ -77,7 +77,7 @@ export default function ArtisanActions({ dataset, positions, disabled, onPreview
 
   return <>
     <button disabled={disabled || !dataset || exporting}
-      onClick={() => dataset && onPreview(createArtisanSnapshot(dataset, positions))}>Vue artisan</button>
+      onClick={() => dataset && onPreview(createArtisanSnapshot(dataset, positions))}>Aperçu du site</button>
     <button disabled={disabled || !dataset || exporting} onClick={() => {
       if (!dataset) return;
       setError("");
@@ -87,8 +87,8 @@ export default function ArtisanActions({ dataset, positions, disabled, onPreview
     {notice && <p className="export-message" role="status">{notice}</p>}
     {snapshot && <dialog ref={dialogRef} className="save-dialog" aria-labelledby="export-heading"
       onCancel={(event) => { if (exporting) event.preventDefault(); else setSnapshot(null); }}>
-      <h2 id="export-heading">Partager la vue artisan</h2>
-      <p>L’archive contient une page autonome en lecture seule : le plan et les {snapshot.dataset.points.length} entrées, avec les notes et les prix renseignés.</p>
+      <h2 id="export-heading">Partager le plan électrique</h2>
+      <p>L’archive contient une page autonome : le plan et les {snapshot.dataset.points.length} entrées, avec les notes et les prix renseignés.</p>
       <p>Les placements locaux sont inclus, même s’ils ne sont pas encore enregistrés dans Notion. Aucun filtre ne retire d’entrée de l’export.</p>
       <p><strong>Un site GitHub Pages est généralement public.</strong> Vérifiez les informations avant de publier. Aucun token ni lien Notion n’est intégré.</p>
       <p>Les données sont figées : un nouvel export sera nécessaire après une modification.</p>

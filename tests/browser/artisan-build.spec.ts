@@ -35,6 +35,8 @@ test("CI-built artisan HTML works offline with saved positions, prices and no ed
     return route.abort();
   });
   await page.goto(pathToFileURL(file).href);
+  await expect(page).toHaveTitle("Plan électrique");
+  await expect(page.locator("main")).not.toContainText(/vue artisan|lecture seule/i);
   await expect(page.locator(".list-panel tbody tr")).toHaveCount(points.length);
   await expect(page.locator("[data-marker]")).toHaveCount(1);
   await expect(page.locator("[data-marker]")).toHaveAttribute("transform", "translate(240, 1280)");
