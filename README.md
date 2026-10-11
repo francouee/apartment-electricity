@@ -37,6 +37,7 @@ pour revenir aux coordonnées de la source. Les noms CSV doivent être uniques.
 
 Le survol et le focus clavier synchronisent la ligne, le marqueur et les détails.
 Le clic conserve la sélection. Une entrée non placée reste consultable dans la liste.
+Les types « Spot » et « Ruban LED » ont des couleurs distinctes dans la légende du plan.
 
 ## Résumé des prix
 

@@ -71,6 +71,8 @@ export function coordinatePair(x: string | number | null, y: string | number | n
 }
 
 export function pointColor(type: string): string {
+  if (type.toLocaleLowerCase("fr").includes("ruban led")) return "#008c95";
+  if (type.toLowerCase().includes("spot")) return "#c47d08";
   if (type.toLowerCase().includes("interrupteur")) return "#367daa";
   if (type.toLowerCase().includes("haute")) return "#d44d58";
   if (type.toLowerCase().includes("fibre")) return "#8368af";

@@ -32,9 +32,13 @@ test("duplicate CSV names and malformed schemas are not silently accepted", () =
   assert.throws(() => parsePoints(csv + csv.split("\n")[1] + "\n"));
   assert.throws(() => parsePoints("Nom,Type\nPrise,Prise basse"));
 });
-test("legend keeps the original semantics and distinguishes fibre", () => {
+test("legend keeps existing colors and distinguishes fibre, spotlights and LED strips", () => {
   assert.equal(pointColor("interrupteur"), "#367daa");
   assert.equal(pointColor("Prise haute"), "#d44d58");
   assert.equal(pointColor("Prise basse / Sortie de câble"), "#278561");
   assert.equal(pointColor("sortie Fibre internet"), "#8368af");
+  assert.equal(pointColor("Spot LED"), "#c47d08");
+  assert.equal(pointColor("spots encastrés"), "#c47d08");
+  assert.equal(pointColor("Ruban LED"), "#008c95");
+  assert.equal(pointColor("ruban led sous meuble"), "#008c95");
 });

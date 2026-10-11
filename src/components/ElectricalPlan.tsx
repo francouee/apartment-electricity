@@ -345,7 +345,7 @@ export default function ElectricalPlan({
             {placing && selected && <div className="placement-hint">Clique sur le plan pour placer « {selected.name} ».<button onClick={() => setPlacing(false)}>Annuler</button></div>}
           </div>
           <div className="legend">
-            {[["#367daa", "Interrupteur"], ["#d44d58", "Prise haute"], ["#278561", "Prise basse / câble"], ["#8368af", "Fibre"]].map(([color, label]) =>
+            {[["#367daa", "Interrupteur"], ["#d44d58", "Prise haute"], ["#278561", "Prise basse / câble"], ["#8368af", "Fibre"], ["#c47d08", "Spot"], ["#008c95", "Ruban LED"]].map(([color, label]) =>
               <span key={label}><i style={{ background: color }} />{label}</span>,
             )}
             <span className="legend-existing">Centre blanc : déjà présente</span>
